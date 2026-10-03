@@ -1,0 +1,16 @@
+# Secrets at any directory depth
+.env
+.env.*
+!.env.example
+Secrets.xcconfig
+*.p8
+*.p12
+
+# Local development
+.DS_Store
+.build/
+DerivedData/
+xcuserdata/
+node_modules/
+supabase/.temp/
+supabase/.branches/
