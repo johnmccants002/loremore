@@ -1,0 +1,41 @@
+name: Validate database
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'scripts/test-*.mjs'
+      - 'package*.json'
+      - '.github/workflows/database.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'scripts/test-*.mjs'
+      - 'package*.json'
+      - '.github/workflows/database.yml'
+permissions:
+  contents: read
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Start disposable local Supabase
+        run: npx supabase start --exclude studio,postgres-meta,realtime,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit
+      - name: Rebuild from migrations
+        run: npx supabase db reset --local --no-seed
+      - name: Two-user SQL ownership tests
+        run: npm run db:test
+      - name: Auth and Storage API integration tests
+        run: npm run db:test:api
+      - name: Database advisors
+        run: npx supabase db advisors --local --type all --level warn --fail-on error
+      - name: Stop disposable stack
+        if: always()
+        run: npx supabase stop --no-backup

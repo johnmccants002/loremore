@@ -1,6 +1,6 @@
 # LoreMore
 
-An Expo + React Native + TypeScript journal app that turns daily moments into a personal story. The app includes email/password authentication and protected Today, Story, Projects, and Profile tabs. Capture and AI features are tracked in issues #3–#15.
+An Expo + React Native + TypeScript journal app that turns daily moments into a personal story. The app includes email/password authentication and protected Today, Story, Projects, and Profile tabs. Database migrations and private Storage policies are included; capture and AI features are tracked in issues #4–#15.
 
 ## Run locally
 
@@ -41,7 +41,7 @@ Native sessions are stored in encrypted Expo SecureStore, split into small ASCII
 
 During startup, the provider restores the session and verifies the user with Supabase before rendering protected routes. Verification/network errors fail closed with retry and sign-out actions. Foreground/background events control native token refresh; listeners are removed on unmount. Sign-out uses local scope (this device), and errors are displayed instead of pretending logout succeeded.
 
-Expo Router removes the main tabs from unauthenticated navigation, including direct links and browser back navigation. This protects UI access only: issue #3 must enforce RLS and Storage authorization on the server before any private data is connected. Public keys are intentionally not an authorization boundary.
+Expo Router removes the main tabs from unauthenticated navigation, including direct links and browser back navigation. This protects UI access only: the database migration enforces RLS and Storage authorization and must be deployed before connecting private data. Public keys are intentionally not an authorization boundary.
 
 ### Authentication smoke test
 
@@ -63,7 +63,11 @@ The automated tests use mocked auth responses and storage. A read-only call to t
 - `src/auth/`: session provider, route gate, and chunked native SecureStore adapter.
 - `src/lib/supabase.ts`: the single reusable Supabase client.
 - `__tests__/`: authentication lifecycle, form, configuration, and storage tests.
-- `supabase/functions/`: server environment template; functions will follow.
+- `supabase/`: local configuration, database migrations, ownership tests, and the server environment template.
+
+## Database
+
+See [the database guide](supabase/README.md) for the nine-table schema, private bucket path convention, deletion behavior, local test commands, and hosted deployment boundaries. Migrations have not been applied to the hosted project.
 
 ## Validation
 
