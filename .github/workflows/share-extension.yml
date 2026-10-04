@@ -1,0 +1,35 @@
+name: Validate iOS Share Extension
+on:
+  pull_request:
+    paths:
+      - 'plugins/**'
+      - 'modules/**'
+      - 'tests/native/**'
+      - 'scripts/check-share-extension.mjs'
+      - 'app.config.ts'
+      - 'package*.json'
+      - '.github/workflows/share-extension.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'plugins/**'
+      - 'modules/**'
+      - 'tests/native/**'
+      - 'scripts/check-share-extension.mjs'
+      - 'app.config.ts'
+      - 'package*.json'
+      - '.github/workflows/share-extension.yml'
+permissions:
+  contents: read
+jobs:
+  native-extension:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check:share-extension

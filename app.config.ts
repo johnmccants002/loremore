@@ -15,7 +15,7 @@ const config: ExpoConfig = {
   },
   android: { package: 'com.loremore.app.dev' },
   web: { bundler: 'metro', output: 'single' },
-  plugins: ['expo-router', 'expo-dev-client', 'expo-font', 'expo-status-bar', 'expo-secure-store', 'expo-asset', ['expo-image-picker', { photosPermission: 'Choose photos to add to your private LoreMore journal.', cameraPermission: false, microphonePermission: false }]],
+  plugins: ['./plugins/with-share-extension', 'expo-router', 'expo-dev-client', 'expo-font', 'expo-status-bar', 'expo-secure-store', 'expo-asset', ['expo-image-picker', { photosPermission: 'Choose photos to add to your private LoreMore journal.', cameraPermission: false, microphonePermission: false }]],
   experiments: { typedRoutes: true },
 };
 export default config;

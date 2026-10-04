@@ -1,3 +1,4 @@
+import { nativeInbox } from '@/sharing/native-inbox';
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 import { AppState, Platform } from 'react-native';
@@ -69,6 +70,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     if (!supabase) return;
+    // Disable extension capture before ending this account’s session.
+    nativeInbox?.setOwner(null);
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) throw error;
     setState({ session: null, loading: false, error: null });

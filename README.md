@@ -91,3 +91,23 @@ References: [Expo environment variables](https://docs.expo.dev/guides/environmen
 Apply the migrations described in [supabase/README.md](supabase/README.md) before testing against a project. Sign in, open Today, choose **Add a photo**, and select an image. The app shows preparation, upload, and save stages, then refreshes the timeline. Older photos are added to the day of import; source timestamps are preserved separately when available. Photos are resized to a maximum 2048-pixel long edge and saved as JPEG.
 
 To verify recovery, interrupt the connection during an import, reconnect, and choose **Retry photo import**. It should create one moment. **Remove this import** removes an unfinished import and its file. Keep the app open until completion; background upload recovery is not implemented. Pull down to refresh on mobile, or use **Refresh**. Sign in as a different user to confirm their timeline does not contain the first user's photos.
+
+## iOS: Add to LoreMore
+
+The iOS share extension accepts one image from Photos, Meta AI, or another app that provides image files. Open LoreMore and sign in once, then use **Share → Add to LoreMore**. The extension confirms **Added to LoreMore** after saving a private on-device copy and asks you to open LoreMore to finish syncing. It works while the main app is closed and without a network connection; it does not launch the main app through unsupported iOS APIs.
+
+On opening/foregrounding LoreMore, shared photos upload through the same private Storage and atomic save pipeline as manual imports, with `source=share_extension`. Today refreshes after syncing. Failed imports remain in the durable inbox with stable IDs and offer **Retry shared photos**. Sign-out disables new extension captures. Existing queued photos remain bound to their original account and resume only when that account signs in again. The extension never receives session tokens or privileged keys.
+
+The local Expo module under `modules/loremore-share` and config plugin under `plugins` generate the extension target, embed it in the app, and configure both App Group entitlements. Defaults are `<IOS_BUNDLE_ID>.share` and `group.<IOS_BUNDLE_ID>.shared`; optional `SHARE_EXTENSION_BUNDLE_ID` and `IOS_APP_GROUP_ID` overrides must match your Apple provisioning. EAS extension metadata is included. Rebuild the native app after these changes; Expo Go and an older installed development client do not contain this target/module. Apply the new `share_extension_source` migration before syncing.
+
+Run `npm run check:share-extension` on macOS to prebuild twice in a disposable directory, verify target/embedding/App Groups/autolinking/EAS settings, run native inbox tests, and compile the unsigned extension. It leaves the working `ios/` folder alone. GitHub CI runs this check on macOS. The extension can compile with the currently installed Xcode, but the full Expo SDK 57 host app still requires Swift 6.2 or newer.
+
+Device acceptance checks after provisioning/building the full app:
+
+1. Sign in, close LoreMore, and share one photo from Photos and Meta AI. Verify the share-sheet target and local confirmation.
+2. Open LoreMore and verify the photo appears in Today with the shared source. Close/reopen during upload and verify one moment, not duplicates.
+3. Share while offline, then reconnect/open LoreMore or choose Retry shared photos.
+4. Sign out and verify the extension asks you to sign in. Switch accounts and verify previously queued photos never appear in the other account.
+5. Cancel an in-progress share, try unsupported content, and try a photo over 50 MB. Verify clear feedback and no new moment for failed/cancelled shares.
+
+The inbox holds up to 50 normalized photos per account, with at most 12 MiB per output. It downsamples to a 2048-pixel long edge, stores a literal EXIF timestamp when available, omits GPS metadata, excludes queued files from backups, and uses iOS file protection. Only the device that received a share holds an unsynced copy; uninstalling LoreMore can remove unsynced photos. Multi-image, video, and link sharing are not included.

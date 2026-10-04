@@ -19,7 +19,8 @@
     "db:reset": "supabase db reset --local --no-seed",
     "db:test": "node scripts/test-database.mjs",
     "db:test:api": "node scripts/test-storage.mjs",
-    "db:advisors": "supabase db advisors --local --type all --level warn --fail-on error"
+    "db:advisors": "supabase db advisors --local --type all --level warn --fail-on error",
+    "check:share-extension": "node scripts/check-share-extension.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "15.1.1",
