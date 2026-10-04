@@ -14,3 +14,11 @@ xcuserdata/
 node_modules/
 supabase/.temp/
 supabase/.branches/
+
+# Expo generated files and native projects (generated from app.config.ts)
+.expo/
+dist/
+expo-env.d.ts
+/ios/
+/android/
+*.tsbuildinfo
