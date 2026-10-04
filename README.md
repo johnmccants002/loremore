@@ -1,29 +1,56 @@
 # LoreMore
 
-Environment scaffolding for Supabase project `mkfkevnncrxmtnbgwzup`. The app, Xcode project, and Edge Functions have not been created yet.
+An Expo + React Native + TypeScript journal app that turns daily moments into a personal story. The first foundation includes Today, Story, Projects, and Profile tabs. These are honest placeholder screens; authentication, capture, and AI are tracked in issues #2–#15.
 
-## Local setup
+## Run locally
 
-- `.env.example` documents local server/tooling settings. `.env` is the ignored local copy, with a generated development `APP_SECRET`.
-- `ios/Configuration/Secrets.example.xcconfig` contains only the Supabase URL and public client key options. Its ignored `Secrets.xcconfig` copy is ready to fill in.
-- `supabase/functions/.env.example` contains custom Edge Function settings. The ignored `.env` beside it has a separate generated development secret.
+Use Node.js 24 LTS (see `.nvmrc`) and npm. From the repository root:
 
-API keys, bundle identifiers, model IDs, provider credentials, and the public website URL are intentionally blank. Get the client key from [Supabase API Keys](https://supabase.com/dashboard/project/mkfkevnncrxmtnbgwzup/settings/api-keys). Prefer `SUPABASE_PUBLISHABLE_KEY`; `SUPABASE_ANON_KEY` is a legacy alternative. MCP authentication does not populate application API keys.
+```sh
+nvm use
+npm ci
+cp .env.example .env  # only on a fresh checkout; preserve existing local values
+npm run web
+```
 
-On a fresh checkout, copy each example to its corresponding local filename and generate fresh application secrets. Local `.env` files are not automatically loaded by every runtime; the server must explicitly load the intended file.
+The shell runs without API keys. For an iOS development build, install Xcode with Swift 6.2 or later, an iOS Simulator runtime, and CocoaPods, then run `npm run ios`. That command generates the native iOS project, builds the development client, and starts Metro. For later sessions use `npm start`. Android developers can run `npm run android` with Android Studio and an emulator installed.
 
-## iOS integration
+`eas.json` also provides `development`, `development-simulator`, and `production` build profiles for a future EAS project. No EAS account, remote build, or store release is configured yet. The default native identifier `com.loremore.app.dev` is a development placeholder; set `IOS_BUNDLE_ID` before signing or distributing on devices, and choose the Android package in `app.config.ts` before publishing.
 
-When creating the Xcode project, include the client xcconfig in the app and share-extension build configurations, then expose only the URL and selected public key to Swift through explicit Info.plist build-setting substitutions. The xcconfig alone does not wire values into a running app. Choose the Apple bundle IDs when creating the targets; the root `.env` does not configure Xcode.
+## Configuration and secrets
 
-Never add the root `.env`, Edge Function `.env`, service-role key, AI keys, voice credentials, or webhook secrets to target resources or client build settings. Public client keys are extractable from apps; access to user data must be enforced through database and Storage policies.
+Expo automatically loads root `.env` files. Only explicit `EXPO_PUBLIC_*` references are read by client code in `src/config/environment.ts`:
 
-## Edge Functions
+- `EXPO_PUBLIC_SUPABASE_URL` identifies the Supabase project.
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is the preferred public client key.
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` is a legacy alternative used when the publishable key is blank.
 
-The Edge Function template deliberately excludes `SUPABASE_*` variables. Supabase supplies its own connection credentials in this runtime and reserves that prefix for hosted secrets. Custom bucket settings use `LOREMORE_MOMENTS_BUCKET` and `LOREMORE_PROFILE_BUCKET`; the Supabase webhook setting uses `LOREMORE_SUPABASE_WEBHOOK_SECRET`.
+Copy these public values from [Supabase API Keys](https://supabase.com/dashboard/project/mkfkevnncrxmtnbgwzup/settings/api-keys) when implementing auth. MCP login does not provide application credentials. Unprefixed `SUPABASE_URL` and key variables remain available for server tooling, but are not used by the mobile app. Do not add server credentials to public variables or Expo's `extra` config.
 
-Local Edge Functions load `supabase/functions/.env`. Hosted functions require their custom secrets to be configured separately in the dashboard or CLI. Do not upload the root `.env` as an Edge Function secrets file. Development and production should have separate secrets; the two local files are independent and are not synchronized.
+The root `.env.example` also documents server-only AI, voice, and webhook settings. `supabase/functions/.env.example` is the separate Edge Function template: Supabase injects its own reserved `SUPABASE_*` variables there, so custom bucket and webhook settings use `LOREMORE_*`. Local and hosted secrets must be configured separately. Bucket names do not create buckets.
 
-Bucket names are configuration only: no buckets, policies, webhooks, deployments, or database changes have been created. Optional provider and webhook fields should remain blank until their integrations exist.
+All local env files and `Secrets.xcconfig` files are ignored. The original native-only xcconfig template is preserved in `config/native-reference/` as a reference; Expo does not load it. Native `ios/` and `android/` directories are generated and ignored. Put persistent native configuration in app config/config plugins, including the future share extension.
 
-References: [API keys](https://supabase.com/docs/guides/getting-started/api-keys) and [Edge Function environment variables](https://supabase.com/docs/guides/functions/secrets).
+## Structure
+
+- `src/app/`: Expo Router layouts and four tab screens.
+- `src/components/`: shared journal screen and empty-state components.
+- `src/theme/`: color, spacing, radius, and typography tokens.
+- `src/config/`: explicit public environment configuration.
+- `supabase/functions/`: server environment template; functions will follow.
+
+## Validation
+
+```sh
+npm run typecheck
+npx expo install --check
+npm run export
+```
+
+CI checks types, Expo dependency compatibility, and iOS/Android/web bundling. Native builds additionally require the platform toolchain. On the initial development Mac, Xcode 16.3 / Swift 6.1 blocks ExpoModulesJSI: its Apple package requires Swift tools 6.2. CocoaPods installs successfully with the workaround below, but native launch remains unverified until Xcode is updated. Before merging, open all four tabs and confirm headings, empty states, tab selection, and scrolling at a phone size. No sign-in or backend connection is expected in issue #1.
+
+If CocoaPods reports Ruby gem path conflicts on a Mac with both RVM and Homebrew Ruby, use one consistent Ruby installation. A command-scoped workaround for the Homebrew CocoaPods installation is `env -u GEM_HOME -u GEM_PATH LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 pod install` inside the generated `ios/` directory.
+
+The initial dependency audit reports transitive advisories in Expo tooling/navigation dependencies (`braces`, `node-forge`, `uuid`, and `decode-uri-component`). There is no compatible automatic fix across the installed SDK; do not use `npm audit fix --force`, which suggests incompatible SDK changes. Review upstream updates before production deployment.
+
+References: [Expo environment variables](https://docs.expo.dev/guides/environment-variables/), [Expo project setup](https://docs.expo.dev/get-started/create-a-project/), and [Supabase Edge Function secrets](https://supabase.com/docs/guides/functions/secrets).
