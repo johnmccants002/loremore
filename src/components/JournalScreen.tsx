@@ -8,7 +8,7 @@ type Props = PropsWithChildren<{ eyebrow: string; title: string; description: st
 export function JournalScreen({ eyebrow, title, description, children }: Props) {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
           <Text style={styles.brand}>LOREMORE <Text style={styles.brandNote}> / A life worth remembering</Text></Text>
           <Text style={styles.eyebrow}>{eyebrow}</Text>

@@ -1,3 +1,5 @@
+import { isPublicSupabaseConfiguration } from './public-supabase';
+
 // Static dot notation is required for Expo to inline public values.
 // Never read server credentials or spread process.env into client configuration.
 export const environment = Object.freeze({
@@ -6,6 +8,6 @@ export const environment = Object.freeze({
     || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() || '',
 });
 
-export const hasSupabaseConfiguration = Boolean(
-  environment.supabaseUrl && environment.supabaseKey,
+export const hasSupabaseConfiguration = isPublicSupabaseConfiguration(
+  environment.supabaseUrl, environment.supabaseKey,
 );
