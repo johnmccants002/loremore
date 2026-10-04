@@ -1,13 +1,8 @@
-import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { theme } from '@/theme/tokens';
+import { AuthProvider } from '@/auth/AuthProvider';
+import { AuthGate } from '@/auth/AuthGate';
 
 export default function RootLayout() {
-  return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }} />
-    </SafeAreaProvider>
-  );
+  return <SafeAreaProvider><StatusBar style="dark" /><AuthProvider><AuthGate /></AuthProvider></SafeAreaProvider>;
 }

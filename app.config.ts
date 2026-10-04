@@ -15,7 +15,7 @@ const config: ExpoConfig = {
   },
   android: { package: 'com.loremore.app.dev' },
   web: { bundler: 'metro', output: 'single' },
-  plugins: ['expo-router', 'expo-dev-client', 'expo-font', 'expo-status-bar'],
+  plugins: ['expo-router', 'expo-dev-client', 'expo-font', 'expo-status-bar', 'expo-secure-store', 'expo-asset'],
   experiments: { typedRoutes: true },
 };
 export default config;
