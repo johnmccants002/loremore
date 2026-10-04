@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
+import { createMomentRepository } from '../src/moments/repository.ts';
 
 const local = JSON.parse(execFileSync('npx', ['--no-install', 'supabase', 'status', '--output', 'json'], { encoding: 'utf8' }));
 const url = local.API_URL;
@@ -37,6 +38,34 @@ try {
   assert.equal(success(await bob.from('moments').select().eq('id', moment.id), 'foreign rows hidden').length, 0);
   assert((await bob.from('moments').insert({ user_id: aliceId, kind: 'note', source: 'text_note' })).error, 'cannot insert foreign owner through API');
   assert((await anon.from('moments').select()).error, 'anonymous Data API denied');
+
+  // Run the same import repository used by the app against real Auth/Storage/PostgREST.
+  const repository = createMomentRepository(alice);
+  const photoId = randomUUID();
+  const photoPath = `${aliceId}/${photoId}.jpg`;
+  objects.push({ bucket: 'moments', path: photoPath });
+  const photo = { id: photoId, userId: aliceId, capturedAt: new Date().toISOString(),
+    bytes: Uint8Array.from(png).buffer, width: 1, height: 1, sourceTimestamp: '2020:01:02 03:04:05' };
+  await repository.importPhoto(photo, () => {});
+  await repository.importPhoto(photo, () => {});
+  const imported = (await repository.listDay(aliceId, new Date())).filter(row => row.id === photoId);
+  assert.equal(imported.length, 1, 'retry creates one moment');
+  assert.equal(imported[0].moment_media.length, 1, 'retry creates one media record');
+  assert.equal(success(await alice.from('moment_media').select('source_timestamp').eq('id', photoId).single(), 'source metadata').source_timestamp, photo.sourceTimestamp);
+  assert.equal((await fetch(await repository.imageUrl(photoPath))).status, 200, 'signed preview is readable');
+  assert.equal((await createMomentRepository(bob).listDay(bobId, new Date())).length, 0, 'other account has no timeline entries');
+  const args = { p_id: photoId, p_captured_at: photo.capturedAt, p_size_bytes: png.length, p_width: 1, p_height: 1 };
+  assert((await bob.rpc('save_photo_import', args)).error, 'foreign import cannot be reused');
+  assert((await anon.rpc('save_photo_import', args)).error, 'anonymous RPC denied');
+  const invalidId = randomUUID();
+  const invalidPath = `${aliceId}/${invalidId}.jpg`;
+  objects.push({ bucket: 'moments', path: invalidPath });
+  success(await alice.storage.from('moments').upload(invalidPath, png, { contentType: 'image/jpeg' }), 'upload rollback fixture');
+  assert((await alice.rpc('save_photo_import', { ...args, p_id: invalidId, p_width: -1 })).error, 'invalid media rejected');
+  assert.equal(success(await alice.from('moments').select('id').eq('id', invalidId), 'atomic rollback').length, 0, 'media failure rolls back moment');
+  await repository.removeImport(photo);
+  assert.equal(success(await alice.from('moments').select('id').eq('id', photoId), 'removed import').length, 0);
+  assert((await alice.storage.from('moments').download(photoPath)).error, 'removal also deletes binary');
 
   for (const bucket of ['moments', 'profile-media']) {
     const path = `${aliceId}/${randomUUID()}.png`;

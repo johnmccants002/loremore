@@ -53,3 +53,13 @@ When Docker is unavailable, `tests/support/standalone-postgres.sql` provides min
 This PR does not deploy to the hosted project. After review, inspect its current schema, bucket names, and existing policies, confirm backups and its Postgres version, and apply the migration through the normal Supabase migration workflow. The migration makes any existing buckets named `moments` and `profile-media` private and applies its size/MIME limits; review that impact before deploying to a populated project. Verify advisors and two-account access again after deployment. Do not run reset, SQL fixtures, or the standalone support file against hosted data.
 
 Source links: [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Storage policies](https://supabase.com/docs/guides/storage/security/access-control), [local migrations](https://supabase.com/docs/guides/deployment/database-migrations).
+
+## Photo imports and Today
+
+The photo-import migration adds `moment_media.source_timestamp` and the authenticated, security-invoker `save_photo_import` RPC. The RPC checks the owner's uploaded file, then creates the moment and media together under the existing RLS policies. A stable UUID makes repeated saves idempotent; a failed media insert rolls back its moment. Apply both migrations before using the new client.
+
+Today uses the device's local calendar day and orders by `captured_at`, then ID. Imports use the import time for that timeline; a native photo's literal EXIF date is preserved separately when available because it may lack a timezone. The picker normalizes to JPEG at a maximum 2048-pixel long edge and stores dimensions and byte count. It does not retain location metadata or the full-resolution original.
+
+Storage paths are `<user UUID>/<import UUID>.jpg`. Private preview URLs expire after an hour and are renewed on refresh, focus, foreground, or periodic refresh. Upload progress is shown as preparation/upload/save stages, not an estimated byte percentage. Retry retains the same import in memory and never overwrites an existing object. An ambiguous save failure leaves the file available for retry; **Remove this import** removes its moment (if saved) and then its Storage object. Reconnect and retry removal if either operation fails.
+
+Pending imports are not a durable background queue yet: keep the app open until completion. Force-quitting after upload but before save can leave an unreferenced private object; automated orphan cleanup and resumable background imports remain follow-up work. The API integration suite exercises the app's repository against local Supabase, including duplicate retries, signed previews, atomic rollback, foreign/anonymous denial, and removal.
