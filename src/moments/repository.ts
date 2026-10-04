@@ -10,6 +10,7 @@ export type Moment = {
 };
 export type PhotoImport = {
   id: string; userId: string; capturedAt: string; bytes: ArrayBuffer;
+  source?: 'manual_import' | 'share_extension';
   width: number; height: number; sourceTimestamp: string | null;
 };
 export type ImportStage = 'Preparing photo…' | 'Uploading photo…' | 'Saving moment…';
@@ -52,7 +53,7 @@ export function createMomentRepository(client: SupabaseClient) {
       const upload = await client.storage.from('moments').upload(path, photo.bytes, { contentType: 'image/jpeg', upsert: false });
       if (upload.error && !('statusCode' in upload.error && String(upload.error.statusCode) === '409')) throw upload.error;
       onStage('Saving moment…');
-      const saved = await client.rpc('save_photo_import', {
+      const saved = await client.rpc(photo.source === 'share_extension' ? 'save_shared_photo' : 'save_photo_import', {
         p_id: photo.id, p_captured_at: photo.capturedAt, p_size_bytes: photo.bytes.byteLength,
         p_width: photo.width, p_height: photo.height, p_source_timestamp: photo.sourceTimestamp,
       });

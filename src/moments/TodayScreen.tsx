@@ -1,3 +1,4 @@
+import { useSharedImports } from '@/sharing/SharedImportProvider';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { ActionButton } from '@/components/ActionButton';
@@ -10,6 +11,8 @@ import { useTodayMoments } from './use-today-moments';
 
 export function TodayScreen({ userId, repository }: { userId: string; repository: MomentRepository }) {
   const feed = useTodayMoments(repository, userId);
+  const shared = useSharedImports();
+  useEffect(() => { if (shared.revision > 0) void feed.refresh(); }, [shared.revision, feed.refresh]);
   const [stage, setStage] = useState<ImportStage | 'Choosing photo…' | 'Removing import…' | null>(null);
   const [pending, setPending] = useState<PhotoImport | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +61,8 @@ export function TodayScreen({ userId, repository }: { userId: string; repository
     <JournalScreen eyebrow={new Date(feed.day).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
       title="A little more of today." description="The small moments. The passing thoughts. The things you’ll want to remember."
       refreshControl={<RefreshControl refreshing={feed.loading} onRefresh={() => void feed.refresh()} tintColor={theme.colors.accent} />}>
+      {shared.syncing && shared.remaining > 0 && <Text accessibilityLiveRegion="polite" style={styles.body}>Syncing {shared.remaining} shared photo(s)…</Text>}
+      {shared.error && <><Text accessibilityRole="alert" style={styles.error}>{shared.error}</Text><ActionButton title="Retry shared photos" secondary disabled={shared.syncing} onPress={shared.retry} /></>}
       <ActionButton title={pending ? 'Retry photo import' : 'Add a photo'} onPress={() => void addPhoto()} disabled={Boolean(stage)} />
       <Text style={styles.caption}>Add a photo to today’s journal. Only you can see it.</Text>
       {stage && <View accessibilityLiveRegion="polite" style={styles.progress}><ActivityIndicator color={theme.colors.accent} /><Text style={styles.body}>{stage}</Text></View>}
