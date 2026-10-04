@@ -1,3 +1,4 @@
+import type { MomentContext } from './context';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type MomentMedia = { id: string; object_path: string; mime_type: string; width: number | null; height: number | null };
@@ -7,6 +8,7 @@ export type Moment = {
   source: 'manual_import' | 'share_extension' | 'text_note' | 'voice_memo';
   analysis_status: 'not_requested' | 'pending' | 'complete' | 'failed';
   moment_media: MomentMedia[];
+  ai_context?: MomentContext;
 };
 export type PhotoImport = {
   id: string; userId: string; capturedAt: string; bytes: ArrayBuffer;
@@ -23,14 +25,26 @@ export function localDayBounds(date: Date) {
 }
 
 export function createMomentRepository(client: SupabaseClient) {
+  async function requestAnalysis(id: string): Promise<void> {
+    const { error } = await client.functions.invoke('analyze-moment', { body: { momentId: id }, timeout: 8000 });
+    if (error) throw error;
+  }
   return {
+    requestAnalysis,
+    async getMoment(userId: string, id: string): Promise<Moment | null> {
+      const { data, error } = await client.from('moments')
+        .select('id,captured_at,title,note,kind,source,analysis_status,ai_context,moment_media(id,object_path,mime_type,width,height)')
+        .eq('user_id', userId).eq('id', id).is('archived_at', null).maybeSingle<Moment>();
+      if (error) throw error;
+      return data;
+    },
     async listDay(userId: string, date: Date): Promise<Moment[]> {
       const { start, end } = localDayBounds(date);
       const moments: Moment[] = [];
       // Page through the API limit without silently truncating busy days.
       for (let offset = 0; ; offset += 100) {
         const { data, error } = await client.from('moments')
-          .select('id,captured_at,title,note,kind,source,analysis_status,moment_media(id,object_path,mime_type,width,height)')
+          .select('id,captured_at,title,note,kind,source,analysis_status,ai_context,moment_media(id,object_path,mime_type,width,height)')
           .eq('user_id', userId).is('archived_at', null).gte('captured_at', start).lt('captured_at', end)
           .order('captured_at', { ascending: true }).order('id', { ascending: true })
           .range(offset, offset + 99).returns<Moment[]>();
@@ -60,6 +74,9 @@ export function createMomentRepository(client: SupabaseClient) {
       // Do not delete on an ambiguous failure: the server may have committed.
       // Retry uses this same ID and the transaction is idempotent.
       if (saved.error) throw saved.error;
+      // Saving the user's photo must succeed even when AI is unavailable. The
+      // feed automatically retries not-yet-requested items after reopening.
+      void requestAnalysis(photo.id).catch(() => {});
     },
     async removeImport(photo: PhotoImport): Promise<void> {
       const { data, error } = await client.auth.getUser();

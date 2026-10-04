@@ -1,6 +1,6 @@
 # LoreMore
 
-An Expo + React Native + TypeScript journal app that turns daily moments into a personal story. The app includes email/password authentication and protected Today, Story, Projects, and Profile tabs. Today shows a chronological local-day timeline and supports manual photo imports into private Supabase Storage. Additional capture and AI features are tracked in issues #6–#15.
+An Expo + React Native + TypeScript journal app that turns daily moments into a personal story. The app includes email/password authentication and protected Today, Story, Projects, and Profile tabs. Today shows a chronological local-day timeline and supports manual photo imports into private Supabase Storage. iOS sharing and AI-suggested photo context are implemented; remaining journal features are tracked in issues #8–#15.
 
 ## Run locally
 
@@ -29,7 +29,7 @@ Copy these public values from [Supabase API Keys](https://supabase.com/dashboard
 
 The root `.env.example` also documents server-only AI, voice, and webhook settings. `supabase/functions/.env.example` is the separate Edge Function template: Supabase injects its own reserved `SUPABASE_*` variables there, so custom bucket and webhook settings use `LOREMORE_*`. Local and hosted secrets must be configured separately. Bucket names do not create buckets.
 
-All local env files and `Secrets.xcconfig` files are ignored. The original native-only xcconfig template is preserved in `config/native-reference/` as a reference; Expo does not load it. Native `ios/` and `android/` directories are generated and ignored. Put persistent native configuration in app config/config plugins, including the future share extension.
+All local env files and `Secrets.xcconfig` files are ignored. The original native-only xcconfig template is preserved in `config/native-reference/` as a reference; Expo does not load it. Native `ios/` and `android/` directories are generated and ignored. Put persistent native configuration in app config/config plugins, including the share extension.
 
 ## Authentication
 
@@ -111,3 +111,13 @@ Device acceptance checks after provisioning/building the full app:
 5. Cancel an in-progress share, try unsupported content, and try a photo over 50 MB. Verify clear feedback and no new moment for failed/cancelled shares.
 
 The inbox holds up to 50 normalized photos per account, with at most 12 MiB per output. It downsamples to a 2048-pixel long edge, stores a literal EXIF timestamp when available, omits GPS metadata, excludes queued files from backups, and uses iOS file protection. Only the device that received a share holds an unsynced copy; uninstalling LoreMore can remove unsynced photos. Multi-image, video, and link sharing are not included.
+
+## AI photo context
+
+Saved manual imports and synced shares request server-side analysis automatically. Today also retries requesting context for photos still marked `not_requested`. Open a moment to see its suggested title, scene summary, possible activity/project connection, confidence, uncertainty, and reflection questions. These are AI hypotheses; suggested projects are not attached automatically and existing titles are preserved.
+
+Photos remain saved when analysis is unavailable. Pending work refreshes for up to two minutes; **Retry AI context** can recover failed or interrupted processing. A server-owned lease prevents duplicate work and rejects late results from older attempts. Each moment allows five attempts, and each account allows 50 requests per rolling 24-hour window. Exhausted daily limits reset with the next window; exhausted per-moment limits require operator review.
+
+Analysis sends the normalized photo and up to 20 of the owner's active project titles to OpenAI. The Responses request uses `store: false`; this does not promise zero provider retention. The API key and model configuration stay in Supabase Edge Functions. See [server setup](supabase/README.md#ai-analysis) before testing: hosted migrations/functions and an OpenAI key are not configured by this code change.
+
+Validation includes `npm run test:edge` for authentication, provider-response validation, failure handling, and background completion, alongside client and database tests. A live provider smoke test remains required after deployment: import a photo, verify pending → complete and private detail output, then test a provider failure and retry.

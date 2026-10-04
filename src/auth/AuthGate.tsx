@@ -20,7 +20,7 @@ export function AuthGate() {
     }} />
   </JournalScreen>;
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background } }}>
-    <Stack.Protected guard={Boolean(session)}><Stack.Screen name="(tabs)" /></Stack.Protected>
+    <Stack.Protected guard={Boolean(session)}><Stack.Screen name="(tabs)" /><Stack.Screen name="moment/[id]" /></Stack.Protected>
     <Stack.Protected guard={!session}><Stack.Screen name="sign-in" /></Stack.Protected>
   </Stack>;
 }
