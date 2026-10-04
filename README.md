@@ -1,6 +1,6 @@
 # LoreMore
 
-An Expo + React Native + TypeScript journal app that turns daily moments into a personal story. The app includes email/password authentication and protected Today, Story, Projects, and Profile tabs. Database migrations and private Storage policies are included; capture and AI features are tracked in issues #4–#15.
+An Expo + React Native + TypeScript journal app that turns daily moments into a personal story. The app includes email/password authentication and protected Today, Story, Projects, and Profile tabs. Today shows a chronological local-day timeline and supports manual photo imports into private Supabase Storage. Additional capture and AI features are tracked in issues #6–#15.
 
 ## Run locally
 
@@ -58,6 +58,7 @@ The automated tests use mocked auth responses and storage. A read-only call to t
 
 - `src/app/`: Expo Router layouts and four tab screens.
 - `src/components/`: shared journal screen and empty-state components.
+- `src/moments/`: Today feed, photo preparation, private previews, and the moment repository.
 - `src/theme/`: color, spacing, radius, and typography tokens.
 - `src/config/`: explicit public environment configuration.
 - `src/auth/`: session provider, route gate, and chunked native SecureStore adapter.
@@ -84,3 +85,9 @@ If CocoaPods reports Ruby gem path conflicts on a Mac with both RVM and Homebrew
 The dependency audit reports transitive advisories in Expo tooling/navigation dependencies (`braces`, `node-forge`, `uuid`, and `decode-uri-component`), with additional advisories in transitive test tooling. There is no compatible automatic fix across the installed SDK; do not use `npm audit fix --force`, which suggests incompatible SDK changes. Review upstream updates before production deployment.
 
 References: [Expo environment variables](https://docs.expo.dev/guides/environment-variables/), [Expo project setup](https://docs.expo.dev/get-started/create-a-project/), and [Supabase Edge Function secrets](https://supabase.com/docs/guides/functions/secrets).
+
+## Today and photo import
+
+Apply the migrations described in [supabase/README.md](supabase/README.md) before testing against a project. Sign in, open Today, choose **Add a photo**, and select an image. The app shows preparation, upload, and save stages, then refreshes the timeline. Older photos are added to the day of import; source timestamps are preserved separately when available. Photos are resized to a maximum 2048-pixel long edge and saved as JPEG.
+
+To verify recovery, interrupt the connection during an import, reconnect, and choose **Retry photo import**. It should create one moment. **Remove this import** removes an unfinished import and its file. Keep the app open until completion; background upload recovery is not implemented. Pull down to refresh on mobile, or use **Refresh**. Sign in as a different user to confirm their timeline does not contain the first user's photos.
