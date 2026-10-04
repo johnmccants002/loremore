@@ -20,7 +20,8 @@
     "db:test": "node scripts/test-database.mjs",
     "db:test:api": "node scripts/test-storage.mjs",
     "db:advisors": "supabase db advisors --local --type all --level warn --fail-on error",
-    "check:share-extension": "node scripts/check-share-extension.mjs"
+    "check:share-extension": "node scripts/check-share-extension.mjs",
+    "test:edge": "node --test tests/edge/*.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "15.1.1",
