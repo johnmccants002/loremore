@@ -4,11 +4,11 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '@/theme/tokens';
 
-type Props = PropsWithChildren<{ eyebrow: string; title: string; description: string }>;
-export function JournalScreen({ eyebrow, title, description, children }: Props) {
+type Props = PropsWithChildren<{ eyebrow: string; title: string; description: string; refreshControl?: ComponentProps<typeof ScrollView>['refreshControl'] }>;
+export function JournalScreen({ eyebrow, title, description, children, refreshControl }: Props) {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
+      <ScrollView refreshControl={refreshControl} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
           <Text style={styles.brand}>LOREMORE <Text style={styles.brandNote}> / A life worth remembering</Text></Text>
           <Text style={styles.eyebrow}>{eyebrow}</Text>
