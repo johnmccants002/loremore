@@ -141,7 +141,7 @@ select loremore_test.assert(not has_table_privilege(current_user, 'public.storie
 select loremore_test.assert((select count(*)=2 from storage.objects where bucket_id in ('moments','profile-media')), 'only own media objects visible');
 select loremore_test.denied($q$insert into storage.objects(bucket_id,name) values ('moments','10000000-0000-0000-0000-000000000002/attack.png')$q$, '42501', 'foreign prefix upload blocked');
 select loremore_test.denied($q$update storage.objects set name='10000000-0000-0000-0000-000000000002/moved.png' where bucket_id='moments'$q$, '42501', 'object ownership transfer blocked');
-insert into storage.objects(bucket_id,name) values ('moments','10000000-0000-0000-0000-000000000001/photo.png') on conflict (bucket_id,name) do update set metadata='{"updated":true}';
+update storage.objects set metadata='{"updated":true}' where bucket_id='moments' and name='10000000-0000-0000-0000-000000000001/photo.png';
 with changed as (update storage.buckets set public=true where id in ('moments','profile-media') returning 1) select loremore_test.assert((select count(*)=0 from changed), 'client cannot publish buckets');
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000002","role":"authenticated"}', true);
@@ -212,7 +212,7 @@ select loremore_test.assert(not has_table_privilege(current_user, 'public.storie
 select loremore_test.assert((select count(*)=2 from storage.objects where bucket_id in ('moments','profile-media')), 'only own media objects visible');
 select loremore_test.denied($q$insert into storage.objects(bucket_id,name) values ('moments','10000000-0000-0000-0000-000000000001/attack.png')$q$, '42501', 'foreign prefix upload blocked');
 select loremore_test.denied($q$update storage.objects set name='10000000-0000-0000-0000-000000000001/moved.png' where bucket_id='moments'$q$, '42501', 'object ownership transfer blocked');
-insert into storage.objects(bucket_id,name) values ('moments','10000000-0000-0000-0000-000000000002/photo.png') on conflict (bucket_id,name) do update set metadata='{"updated":true}';
+update storage.objects set metadata='{"updated":true}' where bucket_id='moments' and name='10000000-0000-0000-0000-000000000002/photo.png';
 with changed as (update storage.buckets set public=true where id in ('moments','profile-media') returning 1) select loremore_test.assert((select count(*)=0 from changed), 'client cannot publish buckets');
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000001","role":"authenticated"}', true);
