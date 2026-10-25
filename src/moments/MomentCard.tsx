@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -6,7 +7,7 @@ import type { Moment, MomentRepository } from './repository';
 
 const sources = { manual_import: 'Photo import', share_extension: 'Shared to LoreMore', text_note: 'Quick note', voice_memo: 'Voice memo' };
 const statuses = { not_requested: 'Saved privately', pending: 'Adding context', complete: 'Context ready', failed: 'Context unavailable' };
-export function MomentCard({ moment, repository, revision }: { moment: Moment; repository: MomentRepository; revision: number }) {
+export function MomentCard({ moment, repository, revision, showDetailLink = true }: { moment: Moment; repository: MomentRepository; revision: number; showDetailLink?: boolean }) {
   const media = moment.moment_media.find(item => item.mime_type.startsWith('image/'));
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -30,6 +31,7 @@ export function MomentCard({ moment, repository, revision }: { moment: Moment; r
       </View>}
       <Text accessibilityRole="header" style={styles.title}>{title}</Text>
       {moment.note && <Text style={styles.body}>{moment.note}</Text>}
+      {showDetailLink && <Link href={{ pathname: '/moment/[id]', params: { id: moment.id } }} accessibilityLabel={`View moment: ${title}`} style={styles.link}>View moment →</Link>}
       <Text style={styles.status}>{statuses[moment.analysis_status]}</Text>
     </View>
   );
@@ -43,5 +45,6 @@ const styles = StyleSheet.create({
   placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   title: { fontFamily: theme.typography.serif, fontSize: 25, color: theme.colors.ink },
   body: { fontSize: 17, lineHeight: 26, color: theme.colors.muted },
+  link: { color: theme.colors.accent, fontSize: 16, paddingVertical: 10 },
   status: { color: theme.colors.accent, fontSize: 12, fontWeight: '600' },
 });

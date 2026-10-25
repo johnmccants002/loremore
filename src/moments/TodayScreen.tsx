@@ -64,7 +64,7 @@ export function TodayScreen({ userId, repository }: { userId: string; repository
       {shared.syncing && shared.remaining > 0 && <Text accessibilityLiveRegion="polite" style={styles.body}>Syncing {shared.remaining} shared photo(s)…</Text>}
       {shared.error && <><Text accessibilityRole="alert" style={styles.error}>{shared.error}</Text><ActionButton title="Retry shared photos" secondary disabled={shared.syncing} onPress={shared.retry} /></>}
       <ActionButton title={pending ? 'Retry photo import' : 'Add a photo'} onPress={() => void addPhoto()} disabled={Boolean(stage)} />
-      <Text style={styles.caption}>Add a photo to today’s journal. Only you can see it.</Text>
+      <Text style={styles.caption}>Add a photo to today’s journal. Photos stay private. OpenAI helps suggest context; its interpretation may be wrong.</Text>
       {stage && <View accessibilityLiveRegion="polite" style={styles.progress}><ActivityIndicator color={theme.colors.accent} /><Text style={styles.body}>{stage}</Text></View>}
       {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
       {pending && !stage && <ActionButton title="Remove this import" secondary onPress={() => void removeImport()} />}

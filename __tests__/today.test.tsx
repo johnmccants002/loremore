@@ -2,14 +2,14 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { TodayScreen } from '../src/moments/TodayScreen';
 import { pickPhoto, preparePhoto } from '../src/moments/photo-picker';
 import type { Moment, MomentRepository, PhotoImport } from '../src/moments/repository';
-jest.mock('expo-router', () => ({ useFocusEffect: (effect: () => void) => require('react').useEffect(effect, [effect]) }));
+jest.mock('expo-router', () => ({ Link: require('react-native').Text, useFocusEffect: (effect: () => void) => require('react').useEffect(effect, [effect]) }));
 jest.mock('../src/moments/photo-picker', () => ({ pickPhoto: jest.fn(), preparePhoto: jest.fn() }));
 jest.mock('react-native-safe-area-context', () => require('react-native-safe-area-context/jest/mock').default);
 const moment: Moment = { id: '1', captured_at: new Date().toISOString(), title: 'Coffee with a friend', note: null, kind: 'photo', source: 'manual_import', analysis_status: 'not_requested', moment_media: [] };
 let repository: jest.Mocked<MomentRepository>;
 beforeEach(() => {
   jest.clearAllMocks();
-  repository = { listDay: jest.fn().mockResolvedValue([]), imageUrl: jest.fn(), importPhoto: jest.fn().mockResolvedValue(undefined), removeImport: jest.fn().mockResolvedValue(undefined) };
+  repository = { requestAnalysis: jest.fn().mockResolvedValue(undefined), getMoment: jest.fn(), listDay: jest.fn().mockResolvedValue([]), imageUrl: jest.fn(), importPhoto: jest.fn().mockResolvedValue(undefined), removeImport: jest.fn().mockResolvedValue(undefined) };
 });
 test('empty state and cancellation create no moment', async () => {
   await render(<TodayScreen repository={repository} userId="owner" />);
@@ -20,7 +20,7 @@ test('empty state and cancellation create no moment', async () => {
   expect(screen.getByRole('button', { name: 'Add a photo' })).toBeEnabled();
 });
 test('failed feed can refresh and display moment details', async () => {
-  repository.listDay.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce([moment]);
+  repository.listDay.mockRejectedValueOnce(new Error('offline')).mockResolvedValue([moment]);
   await render(<TodayScreen repository={repository} userId="owner" />);
   await waitFor(() => expect(screen.getByText(/couldn’t load today/)).toBeTruthy());
   await fireEvent.press(screen.getByRole('button', { name: 'Refresh' }));

@@ -7,7 +7,7 @@ function fixture() {
   for (const key of ['select', 'eq', 'is', 'gte', 'lt', 'order', 'range', 'delete']) query[key] = jest.fn(() => query);
   query.returns = jest.fn().mockResolvedValue({ data: [], error: null });
   const bucket = { upload: jest.fn().mockResolvedValue({ error: null }), remove: jest.fn().mockResolvedValue({ error: null }), createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: 'https://private.test/signed' }, error: null }) };
-  const client = { from: jest.fn(() => query), storage: { from: jest.fn(() => bucket) }, auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'owner' } }, error: null }) }, rpc: jest.fn().mockResolvedValue({ data: 'photo-id', error: null }) };
+  const client = { functions: { invoke: jest.fn().mockResolvedValue({ error: null }) }, from: jest.fn(() => query), storage: { from: jest.fn(() => bucket) }, auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'owner' } }, error: null }) }, rpc: jest.fn().mockResolvedValue({ data: 'photo-id', error: null }) };
   return { client, bucket, query, repository: createMomentRepository(client as unknown as SupabaseClient) };
 }
 test('local day bounds use local calendar midnights, including DST dates', () => {
@@ -50,4 +50,18 @@ test('a switched account cannot resume another user’s photo', async () => {
   client.auth.getUser.mockResolvedValue({ data: { user: { id: 'someone-else' } }, error: null });
   await expect(repository.importPhoto(photo, jest.fn())).rejects.toThrow('same account');
   expect(bucket.upload).not.toHaveBeenCalled();
+});
+
+test('analysis is requested after a successful save and failure never loses the photo', async () => {
+  const { repository, client, bucket } = fixture();
+  client.functions.invoke.mockRejectedValue(new Error('AI unavailable'));
+  await expect(repository.importPhoto(photo, jest.fn())).resolves.toBeUndefined();
+  expect(client.functions.invoke).toHaveBeenCalledWith('analyze-moment', { body: { momentId: photo.id }, timeout: 8000 });
+  expect(bucket.remove).not.toHaveBeenCalled();
+});
+test('an ambiguous save failure does not request analysis', async () => {
+  const { repository, client } = fixture();
+  client.rpc.mockResolvedValue({ error: new Error('offline') });
+  await expect(repository.importPhoto(photo, jest.fn())).rejects.toThrow();
+  expect(client.functions.invoke).not.toHaveBeenCalled();
 });

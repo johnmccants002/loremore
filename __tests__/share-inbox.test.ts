@@ -4,7 +4,7 @@ import type { MomentRepository } from '../src/moments/repository';
 const item: SharedPhoto = { id: 'durable-id', userId: 'alice', capturedAt: '2026-10-04T01:00:00Z', width: 2, height: 3, sizeBytes: 4, uri: 'file:///private/inbox/image.jpg' };
 function fixture() {
   const inbox: jest.Mocked<NativeInbox> = { setOwner: jest.fn(), list: jest.fn().mockResolvedValue([item]), acknowledge: jest.fn().mockResolvedValue(undefined) };
-  const repository: jest.Mocked<MomentRepository> = { importPhoto: jest.fn().mockResolvedValue(undefined), listDay: jest.fn(), imageUrl: jest.fn(), removeImport: jest.fn() };
+  const repository: jest.Mocked<MomentRepository> = { requestAnalysis: jest.fn().mockResolvedValue(undefined), getMoment: jest.fn(), importPhoto: jest.fn().mockResolvedValue(undefined), listDay: jest.fn(), imageUrl: jest.fn(), removeImport: jest.fn() };
   return { inbox, repository, userId: 'alice', readBytes: jest.fn().mockResolvedValue(new ArrayBuffer(4)), stillCurrent: jest.fn(() => true), onProgress: jest.fn() };
 }
 test('successful save uses the native ID and share source before acknowledging', async () => {

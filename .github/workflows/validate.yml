@@ -17,5 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:edge
+      - run: npx --yes deno@2.9.6 check --config supabase/functions/analyze-moment/deno.json supabase/functions/analyze-moment/index.ts
       - run: npx expo install --check
       - run: npm run export

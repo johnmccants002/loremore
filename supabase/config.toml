@@ -53,3 +53,9 @@ secure_password_change = true
 
 [analytics]
 enabled = false
+
+[functions.analyze-moment]
+verify_jwt = true
+
+[edge_runtime]
+policy = "per_worker"
